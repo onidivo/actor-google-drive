@@ -4,11 +4,11 @@ Transfer files between [Apify's key-value stores](https://docs.apify.com/storage
 
 - [Input](#input)
    
-   [1. Constants (`constants`)](#1.-Constants)
+   [1. Constants (`constants`)](#1-Constants)
    
-   [2. Operations (`operations`)](#2.-Operations)
+   [2. Operations (`operations`)](#2-Operations)
    
-   [3. Is setup mode (`isSetupMode`)](#3.-Is-setup-mode)
+   [3. Is setup mode (`isSetupMode`)](#3-Is-setup-mode)
    
 
 
