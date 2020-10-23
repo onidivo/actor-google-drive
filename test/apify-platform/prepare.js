@@ -1,6 +1,7 @@
 const path = require('path');
 const { getLocalUserInfo } = require('apify-cli/src/lib/utils');
 const { ENV_VARS } = require('apify-shared/consts');
+const FileType = require('file-type');
 
 const prepareEnv = () => {
     const userInfo = getLocalUserInfo();
@@ -34,6 +35,12 @@ Apify.main(async () => {
     const platformKvs = await cleanAndGetKeyValueStore(REMOTE_GD_TEST_KVS_NAME, { forceCloud: true });
     await localKvs.forEachKey(async (key, index, info) => {
         log.info(`[KVS: ${REMOTE_GD_TEST_KVS_NAME}] Writing content "${key}" (info: ${JSON.stringify(info)})`);
-        await platformKvs.setValue(key, await localKvs.getValue(key));
+        const value = await localKvs.getValue(key);
+        let contentType;
+        if (Buffer.isBuffer(value)) {
+            const fileTypeResult = await FileType.fromBuffer(value);
+            contentType = fileTypeResult ? fileTypeResult.mime : undefined;
+        }
+        await platformKvs.setValue(key, value, { contentType });
     });
 });
