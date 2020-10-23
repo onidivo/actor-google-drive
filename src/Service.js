@@ -261,16 +261,23 @@ class Service {
         if (typeof file !== 'object') {
             throw new Error(`DriveService.copyFile(): Parameter "file" must be of type object, provided value was "${file}"`);
         }
-        const { fileName, fileStream } = await filesProvider.getFileData(file.key);
-        console.log(`Copying file ${fileName}...`);
+        const { fileName, fileInfo, fileStream } = await filesProvider.getFileData(file.key);
+        console.log(`Uploading file ${fileName}...`);
 
+        const extractedMediaOptions = {};
+        if (fileInfo) {
+            extractedMediaOptions.mimeType = fileInfo.mimeType;
+        }
+        const fileExtraMetadata = file.extraMetadata || {};
         const params = {
             resource: {
-                name: fileName,
                 mimeType: file.mimeType,
+                ...fileExtraMetadata,
+                name: fileName,
                 parents: [parentFolderId],
             },
             media: {
+                ...extractedMediaOptions,
                 body: fileStream,
             },
         };

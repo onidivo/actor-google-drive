@@ -20,10 +20,11 @@ class KeyValueStoreFilesProvider {
         this.kvStore = await Apify.openKeyValueStore(this.id, { forceCloud: this.forceCloud });
     }
 
-    async getFileBuffer(key) {
+    async getFileContent(key) {
         await this.initPromise;
-        const buffer = await this.kvStore.getValue(key);
-        return buffer;
+        const fileContent = await this.kvStore.getValue(key);
+        if (!fileContent) throw new Error(`[KeyValueStoreFilesProvider.getFileContent()] File not found for key "${key}"`);
+        return fileContent;
     }
 
     getFileName(key) {
@@ -41,10 +42,22 @@ class KeyValueStoreFilesProvider {
 
     async getFileData(key) {
         const fileName = this.getFileName(key);
-        const fileBuffer = await this.getFileBuffer(key);
+        const fileContent = await this.getFileContent(key);
         let fileInfo;
-        if (Buffer.isBuffer(fileBuffer)) {
+        let fileBuffer;
+        if (Buffer.isBuffer(fileContent)) {
+            fileBuffer = fileContent;
             fileInfo = await FileType.fromBuffer(fileBuffer);
+        } else if (typeof fileContent === 'string') {
+            fileBuffer = Buffer.from(fileContent, 'utf-8');
+            fileInfo = {
+                mimeType: 'text/plain',
+            };
+        } else if (typeof fileContent === 'object') {
+            fileBuffer = Buffer.from(JSON.stringify(fileContent), 'utf-8');
+            fileInfo = {
+                mimeType: 'application/json',
+            };
         }
         const fileStream = bufferToStream(fileBuffer);
         return {
