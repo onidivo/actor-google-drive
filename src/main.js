@@ -21,5 +21,5 @@ Apify.main(async () => {
             throwIfTimeout(timeoutSecs),
         ]);
     }
-    console.log('Actor finish');
+    console.log('Actor finished');
 });

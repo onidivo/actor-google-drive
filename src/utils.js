@@ -17,6 +17,9 @@ const validateAndParseInput = (input) => {
     const timeoutSecs = input.timeoutSecs
         ? Number(input.timeoutSecs)
         : defaults.timeoutSecs;
+    const maxConcurrency = input.maxConcurrency
+        ? Number(input.maxConcurrency)
+        : undefined;
 
     const parsedOperations = [];
     let constants = {};
@@ -41,7 +44,7 @@ const validateAndParseInput = (input) => {
             }
             // eslint-disable-next-line default-case
             switch (type) {
-                case OPERATIONS_TYPES.FILES_COPY: {
+                case OPERATIONS_TYPES.UPLOAD: {
                     const { source, destination: inputDestination } = operation;
                     const folderParams = Folder.validateAndParse({ folder: inputDestination, constants });
                     parsedOperations.push({ type, source, destination: folderParams });
@@ -56,7 +59,7 @@ const validateAndParseInput = (input) => {
             }
         }
     }
-    return { isSetupMode, constants, operations: parsedOperations, timeoutSecs };
+    return { isSetupMode, constants, operations: parsedOperations, timeoutSecs, maxConcurrency };
 };
 
 const bufferToStream = (buffer) => {

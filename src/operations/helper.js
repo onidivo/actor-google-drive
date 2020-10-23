@@ -50,11 +50,51 @@ class Folder {
     }
 
     static validateAndParse({ folder, constants }) {
-        let folderParams = folder;
-
-        if (typeCheck('String', folderParams) && folderParams.includes('constants.')) {
-            folderParams = constants[folderParams.split('.')[1]];
+        if (!typeCheck('Object', folder) && !typeCheck('String', folder)) {
+            throw new Error(`Parameter "folder" must be of type object or string, provided value was ${folder}`);
         }
+        let finalFolder = folder;
+        if (typeCheck('String', folder) && folder.includes('constants.')) {
+            const constantName = folder.split('.')[1];
+            const constant = constants.find(c => c.name === constantName);
+            if (!constant) {
+                throw new Error(`Constant "${constantName}" not found in the input!`);
+            }
+            const constantValue = constant.value;
+            if (!typeCheck('Object', constantValue) && !typeCheck('String', constantValue)) {
+                throw new Error(`Value of constant "${constantName}" must be of type object or string, provided value was ${constantValue}`);
+            }
+            finalFolder = constantValue;
+        }
+        const folderParams = {
+            parentFolderId: undefined,
+            parentFolderName: undefined,
+            relativePath: undefined,
+        };
+        let folderPath = finalFolder;
+
+        if (typeCheck('Object', finalFolder)) {
+            if (!typeCheck('String', finalFolder.path)) {
+                throw new Error(`Value of "path" in folder object must be of type string, provided value was ${finalFolder.path}`);
+            }
+            if (finalFolder.parentFolderId && !typeCheck('String', finalFolder.path)) {
+                throw new Error(`Value of "parentFolderId" in folder object must be of type string, provided value was ${finalFolder.parentFolderId}`);
+            }
+            folderPath = finalFolder.path;
+            folderParams.parentFolderId = finalFolder.parentFolderId;
+        }
+
+        if (folderParams.parentFolderId) {
+            folderParams.relativePath = folderPath;
+        } else {
+            const pathSplits = folderPath.split('/');
+
+            // eslint-disable-next-line prefer-destructuring
+            folderParams.parentFolderName = pathSplits[0];
+            folderParams.relativePath = pathSplits.length > 1 ? pathSplits.slice(1)
+                .join('/') : undefined;
+        }
+
 
         return folderParams;
     }

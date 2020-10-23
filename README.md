@@ -1,72 +1,113 @@
 # Google Drive Actor
 
-The Google Drive actor can be used to manage files and folders.
+Transfer files between [Apify's key-value stores](https://docs.apify.com/storage#key-value-store) and Google Drive.
 
-## Usage
+- [Input](#input)
+   
+   [1. Constants (`constants`)](#1.-Constants)
+   
+   [2. Operations (`operations`)](#2.-Operations)
+   
+   [3. Is setup mode (`isSetupMode`)](#3.-Is-setup-mode)
+   
 
-The actor is used to perform operations, he will receive them via input. 
 
 ## Input
 
-The input of the actor is JSON with the following parameters.
+The input is a JSON object with the following fields.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| operations | Array | The operations to execute |
-| operations[*] | Object |  Operations options, mainly it contains the **type** and other specific options (check the next section)  |
-| isSetupMode | Boolean |  If **true** operations will not get executed  |
+| Field | Type | Description | Default value | Possible values | Required |
+| ----- | ---- | ----------- | ------ | -------- | -------- |
+| constants | array | Constants to use in the operations | - | - | false |
+| constants[*] | object |  Constant settings | - | - | - |
+| constants[name] | string |  Constant name | - | - | true |
+| constants[value] | string or Object |  Constant value | - | - | true |
+| operations | array | The operations to execute | - | - | false |
+| operations[*] | Object |  Operation settings, mainly it contains the **type** and other specific settings  | - | - | - |
+| isSetupMode | boolean |  Whether yes or no to activate the setup mode  | - | - | false |
 
-### Setup
+### 1. Constants
+ 
+An array of folder info constants to use by the operations (DRY principle). Each constant is a JSON object composed of two fields: name and value.
 
-Before you start using the actor for running operations, you will need to run it with the setup mode. To achieve that you just need to run it with the following input and follow the steps in the run log or you can check this [article](https://kb.apify.com/integration/google-integration) for authorization. 
+#### 1.1 Value as string
 
+Represent the path of the folder
+
+**Example**
 ```json
 {
-  "isSetupMode": true
+      "name": "myFolder",
+      "value": "my-project/files"
 }
 ```
 
- 
-### Operations
+#### 1.2 Value as object
 
-Operations are the main parameter for the input, they passed as objects and distinguished by **type** option. Option **type** can have one the following values: **files-copy**, and **folders-delete**. For each operation type there is specific options, those options are explained bellow for each type:
+Provide more folder definition, which can be useful for defining a shared folder.
 
-#### files-copy
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| source | Object | Represent the file(s) to copy |
-| destination | String | The full path on Google drive where the file(s) will be saved |
+**Example**
 
-**Example:**
 ```json
 {
-      "type": "files-copy",
+      "name": "myFolder",
+      "value": {
+            "parentFolderId": "GoogleDriveFolderId",
+            "path": "files"
+      }
+}
+```
+
+#### Constant usage
+
+We use the constant inside a string with the following format `"constants.[CONSTANT_NAME]"`.
+
+**Example**
+
+```json
+  {
+      "type": "folders-delete",
+      "folder": "constants.myFolder"
+  }
+ ```
+### 2. Operations
+
+Operations are the backbone. Each operation is an object and distinguished by the **type** field. The field **type** can have one the following values: **upload**, and **folders-delete**.
+
+For each operation **type** there are specific settings that accompany as explained below:
+
+#### 2.1. upload
+
+Upload files from the key-value stores to a Google Drive folder.
+
+| Field | Type | Description | Default value | Possible values | Required |
+| ----- | ---- | ----------- | ------ | -------- | -------- |
+| source | object | Represent the file(s) to upload | - | - | true |
+| source.id | string | The ID or name of the key-value store  | - | - | true |
+| source.forceCloud | boolean | Forcibly use the key-value store from the cloud | false | - | false |
+| source.files | array | File(s) to apply the operation on them  |  |  |  |
+| source.files[*] | object |  File(s) settings | - | - | true |
+| source.files[key] | string |  The key of the file on the key-value store | - | - | true |
+| source.files[name] | string|  The name of upload file on Google Drive | - | - | false |
+| source.files[mimeType] | string |  The Google Drive MIME type of the file | - | [Google Drive MIME types](https://developers.google.com/drive/api/v3/mime-types) | false |
+| destination | string / object | Info of the Google Drive's folder where we will upload the file(s) | - | - | true |
+
+**Example**
+```json
+{
+      "type": "upload",
       "source": {
-        "type": "key-value-store",
-        "id": "IdOrName",
-        "forceCloud": true,
+        "id": "my-store",
         "files": [
             {
               "key": "my_spreadsheet",
               "name": "My spreadsheet",
-              "options": {
-                "resource": {
-                  "mimeType": "application/vnd.google-apps.spreadsheet"
-                },
-                "media": {
-                  "mimeType": "text/csv"
-                }
-              }
+              "mimeType": "application/vnd.google-apps.spreadsheet"
             },
             {
               "key": "my_image",
-              "name": "My Image",
-              "options": {
-                "media": {
-                  "mimeType": "image/png"
-                }
-              }
+              "name": "My Image"
             }
         ]
       },
@@ -74,11 +115,13 @@ Operations are the main parameter for the input, they passed as objects and dist
     }
 ```
 
-#### folders-delete
+#### 2.2. folders-delete
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| folder | String | The full path on Google drive of folder to be deleted |
+Delete a folder. This operation type is useful for deleting folders before uploading files to prevent file duplication.
+
+| Field | Type | Description | Default value | Possible values | Required |
+| ----- | ---- | ----------- | ----- | ---- | ----------- |
+| folder | string / object | Info of the Google Drive's folder to delete | - | - | true |
 
 **Example:**
 ```json
@@ -87,3 +130,17 @@ Operations are the main parameter for the input, they passed as objects and dist
       "folder": "My Folder"
 }
 ```
+
+
+### 3. Is setup mode
+
+Before you start using the actor for running operations, you will need to run it in the setup mode. To achieve that, you need to run it with the bellow input and follow the steps in the run's log ( for more info, check this [article](https://kb.apify.com/integration/google-integration)). 
+
+```json
+{
+  "isSetupMode": true
+}
+```
+**Note**: If the setup mode is activated, operations will not get executed.
+
+

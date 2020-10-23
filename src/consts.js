@@ -4,7 +4,7 @@ module.exports = {
         REDIRECT_URI: 'urn:ietf:wg:oauth:2.0:oob',
     },
     OPERATIONS_TYPES: {
-        FILES_COPY: 'files-copy',
+        UPLOAD: 'upload',
         FOLDERS_DELETE: 'folders-delete',
     },
 };

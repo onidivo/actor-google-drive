@@ -1,7 +1,7 @@
 const { apifyGoogleAuth } = require('apify-google-auth');
 const { google } = require('googleapis');
 const { OPERATIONS_TYPES } = require('./consts');
-const { CopyFilesOperation, DeleteFolderOperation } = require('./operations/index');
+const { UploadOperation, DeleteFolderOperation } = require('./operations/index');
 const { Folder } = require('./operations/helper');
 
 const DRIVE_ERROR_MESSAGES = {
@@ -257,22 +257,21 @@ class Service {
         });
     }
 
-    async copyFile(file, parentFolderId, filesProvider) {
+    async uploadFile(file, parentFolderId, filesProvider) {
         if (typeof file !== 'object') {
             throw new Error(`DriveService.copyFile(): Parameter "file" must be of type object, provided value was "${file}"`);
         }
-        const name = filesProvider.getFileName(file.key);
-        console.log(`Copying file ${name}...`);
+        const { fileName, fileStream } = await filesProvider.getFileData(file.key);
+        console.log(`Copying file ${fileName}...`);
 
         const params = {
             resource: {
-                ...file.options.resource,
-                name,
+                name: fileName,
+                mimeType: file.mimeType,
                 parents: [parentFolderId],
             },
             media: {
-                ...file.options.media,
-                body: await filesProvider.getFileStream(file.key),
+                body: fileStream,
             },
         };
         return this.createOrUpdateFile(params);
@@ -285,10 +284,10 @@ class Service {
         for (const operation of operations) {
             const { type } = operation;
             switch (type) {
-                case OPERATIONS_TYPES.FILES_COPY: {
+                case OPERATIONS_TYPES.UPLOAD: {
                     const { source, destination: inputDestination } = operation;
                     const destination = new Folder(inputDestination);
-                    operationToExecute = new CopyFilesOperation({ source, destination });
+                    operationToExecute = new UploadOperation({ source, destination });
                     break;
                 }
                 case OPERATIONS_TYPES.FOLDERS_DELETE: {
