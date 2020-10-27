@@ -4,11 +4,12 @@ Transfer files between [Apify's key-value stores](https://docs.apify.com/storage
 
 - [Input](#input)
    
-   [1. Constants (`constants`)](#1-Constants)
+   [- Constants (`constants`)](#Constants)
    
-   [2. Operations (`operations`)](#2-Operations)
+   [- Operations (`operations`)](#Operations)
    
-   [3. Is setup mode (`isSetupMode`)](#3-Is-setup-mode)
+   [- Is setup mode (`isSetupMode`)](#Is-setup-mode)
+   
    
 
 
@@ -24,13 +25,15 @@ The input is a JSON object with the following fields.
 | constants[value] | string or Object |  Constant value | - | - | true |
 | operations | array | The operations to execute | - | - | false |
 | operations[*] | Object |  Operation settings, mainly it contains the **type** and other specific settings  | - | - | - |
+| fileUploadTimeoutSecs | number |  Maximum available time (in seconds) used to upload a single file | 120 | - | false |
+| fileUploadingMaxConcurrency | number |  Maximum concurrency used for uploading files in parallel | - | - | false |
 | isSetupMode | boolean |  Whether yes or no to activate the setup mode  | - | - | false |
 
-### 1. Constants
+### Constants
  
 An array of folder info constants to use by the operations (DRY principle). Each constant is a JSON object composed of two fields: name and value.
 
-#### 1.1 Value as string
+#### Constant value as string
 
 Represent the path of the folder
 
@@ -42,7 +45,7 @@ Represent the path of the folder
 }
 ```
 
-#### 1.2 Value as object
+#### Constant value as object
 
 Provide more folder definition, which can be useful for defining a shared folder.
 
@@ -71,20 +74,20 @@ We use the constant inside a string with the following format `"constants.[CONST
       "folder": "constants.myFolder"
   }
  ```
-### 2. Operations
+### Operations
 
 Operations are the backbone. Each operation is an object and distinguished by the **type** field. The field **type** can have one the following values: **upload**, and **folders-delete**.
 
 For each operation **type** there are specific settings that accompany as explained below:
 
-#### 2.1. upload
+#### Operation "upload"
 
 Upload files from the key-value stores to a Google Drive folder.
 
 | Field | Type | Description | Default value | Possible values | Required |
 | ----- | ---- | ----------- | ------ | -------- | -------- |
 | source | object | Represent the file(s) to upload | - | - | true |
-| source.id | string | The ID or name of the key-value store  | - | - | true |
+| source.idOrName | string | The ID or name of the key-value store  | - | - | true |
 | source.forceCloud | boolean | Forcibly use the key-value store from the cloud | false | - | false |
 | source.files | array | File(s) to apply the operation on them  |  |  |  |
 | source.files[*] | object |  File(s) settings | - | - | true |
@@ -98,7 +101,7 @@ Upload files from the key-value stores to a Google Drive folder.
 {
       "type": "upload",
       "source": {
-        "id": "my-store",
+        "idOrName": "my-store",
         "files": [
             {
               "key": "my_spreadsheet",
@@ -115,7 +118,7 @@ Upload files from the key-value stores to a Google Drive folder.
     }
 ```
 
-#### 2.2. folders-delete
+#### Operation "folders-delete"
 
 Delete a folder. This operation type is useful for deleting folders before uploading files to prevent file duplication.
 
@@ -132,7 +135,7 @@ Delete a folder. This operation type is useful for deleting folders before uploa
 ```
 
 
-### 3. Is setup mode
+### Is setup mode
 
 Before you start using the actor for running operations, you will need to run it in the setup mode. To achieve that, you need to run it with the bellow input and follow the steps in the run's log ( for more info, check this [article](https://kb.apify.com/integration/google-integration)). 
 

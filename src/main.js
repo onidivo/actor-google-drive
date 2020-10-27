@@ -1,7 +1,6 @@
 const Apify = require('apify');
 const Config = require('./Config');
 const Service = require('./Service');
-const { throwIfTimeout } = require('./utils');
 
 Apify.main(async () => {
     const input = await Apify.getInput();
@@ -14,12 +13,8 @@ Apify.main(async () => {
     const service = new Service(config);
     await service.init();
 
-    const { isSetupMode, timeoutSecs } = config;
-    if (!isSetupMode) {
-        await Promise.race([
-            service.execute(),
-            throwIfTimeout(timeoutSecs),
-        ]);
+    if (!config.isSetupMode) {
+        await service.execute();
     }
     console.log('Actor finished');
 });

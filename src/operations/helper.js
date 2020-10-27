@@ -3,6 +3,7 @@ const { typeCheck } = require('type-check');
 class Folder {
     constructor(params) {
         this.validate(params);
+        this.params = params;
         for (const paramKey of Object.keys(params)) {
             this[paramKey] = params[paramKey];
         }
@@ -60,11 +61,7 @@ class Folder {
             if (!constant) {
                 throw new Error(`Constant "${constantName}" not found in the input!`);
             }
-            const constantValue = constant.value;
-            if (!typeCheck('Object', constantValue) && !typeCheck('String', constantValue)) {
-                throw new Error(`Value of constant "${constantName}" must be of type object or string, provided value was ${constantValue}`);
-            }
-            finalFolder = constantValue;
+            finalFolder = constant.value;
         }
         const folderParams = {
             parentFolderId: undefined,

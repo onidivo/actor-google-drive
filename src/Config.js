@@ -2,19 +2,24 @@ const { GOOGLE_APIS } = require('./consts');
 const { validateAndParseInput } = require('./utils');
 /**
  *
- * @type {Config}
  *
- * @field {Number|undefined} maxConcurrency
+ * @property {Object} input
+ * @property {Array<Object>} constants
+ * @property {Array<Object>} operations
+ * @property {Number} fileUploadTimeoutSecs
+ * @property {Number|undefined} fileUploadingMaxConcurrency
+ * @property {Boolean} isSetupMode
+ * @property {String} tokensStore
+ * @property {Object} googleApisCredentials
  */
-module.exports = class Config {
+class Config {
     constructor(input) {
-        const { isSetupMode, operations, timeoutSecs, maxConcurrency } = validateAndParseInput(input);
-        this.isSetupMode = isSetupMode;
-        this.operations = operations;
-        this.timeoutSecs = timeoutSecs;
-        this.maxConcurrency = maxConcurrency;
+        this.input = input;
+        const parsedInput = validateAndParseInput(input);
+        for (const key of Object.keys(parsedInput)) {
+            this[key] = parsedInput[key];
+        }
 
-        this.tokensStore = input.tokensStore || 'google-auth-tokens';
 
         this.googleApisCredentials = {
             client_id: GOOGLE_APIS.CLIENT_ID,
@@ -22,4 +27,6 @@ module.exports = class Config {
             redirect_uri: GOOGLE_APIS.REDIRECT_URI,
         };
     }
-};
+}
+
+module.exports = Config;

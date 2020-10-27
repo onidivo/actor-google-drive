@@ -7,21 +7,32 @@ const { Folder } = require('../operations/helper');
 // const { Service } = require('../Service');
 
 class KeyValueStoreFilesProvider {
-    constructor({ id, forceCloud = false, files }) {
-        this.id = id;
+    constructor({ idOrName, forceCloud = false, files }) {
+        this.storeIdOrName = idOrName;
         this.forceCloud = forceCloud;
         this.files = files;
         this.kvStore = null;
-        this.initPromise = this.init();
     }
 
     async init() {
         if (this.kvStore) return;
-        this.kvStore = await Apify.openKeyValueStore(this.id, { forceCloud: this.forceCloud });
+        this.kvStore = await Apify.openKeyValueStore(this.storeIdOrName, { forceCloud: this.forceCloud });
+        const filesKeys = this.files.map(f => f.key);
+        const allFilesKeys = [];
+        const notFoundFilesKeys = [];
+        await this.kvStore.forEachKey(key => allFilesKeys.push(key));
+        console.log(`Total number of files in the key-value store: ${allFilesKeys.length - 1}`);
+        for (const fileKey of filesKeys) {
+            if (!allFilesKeys.includes(fileKey)) {
+                notFoundFilesKeys.push(fileKey);
+            }
+        }
+        if (notFoundFilesKeys.length > 0) {
+            throw new Error(`The following files with keys are not found: ${notFoundFilesKeys.join(', ')}`);
+        }
     }
 
     async getFileContent(key) {
-        await this.initPromise;
         const fileContent = await this.kvStore.getValue(key);
         if (!fileContent) throw new Error(`[KeyValueStoreFilesProvider.getFileContent()] File not found for key "${key}"`);
         return fileContent;
@@ -75,7 +86,6 @@ class UploadOperation {
      * @param {Folder} destination
      */
     constructor({ source, destination }) {
-        // TODO: Validate parameters
         if (!destination || !(destination instanceof Folder)) {
             throw new Error('Parameter "destination" must be of type Folder');
         }
@@ -84,9 +94,14 @@ class UploadOperation {
         this.destination = destination;
     }
 
-    filesProvider() {
+    /**
+     *
+     * @returns {KeyValueStoreFilesProvider}
+     */
+    async filesProvider() {
         if (this._filesProvider) return this._filesProvider;
         this._filesProvider = new KeyValueStoreFilesProvider(this.source);
+        await this._filesProvider.init();
         return this._filesProvider;
     }
 
@@ -106,23 +121,36 @@ class UploadOperation {
         });
         await requestList.initialize();
 
-        const uploadedFiles = [];
         const crawler = new Apify.BasicCrawler({
-            maxConcurrency: driveService.config.maxConcurrency,
-            handleRequestTimeoutSecs: 120,
+            maxConcurrency: driveService.config.fileUploadingMaxConcurrency,
+            handleRequestTimeoutSecs: driveService.config.fileUploadTimeoutSecs,
             requestList,
             handleRequestFunction: async ({ request }) => {
                 const { userData: { file } } = request;
-                const uploadedFile = await driveService.uploadFile(file, folderId, filesProvider);
-                const { status, statusText, data } = uploadedFile;
-                uploadedFiles.push({ file, status, statusText, data });
+                const fileUploadResult = await driveService.uploadFile(file, folderId, filesProvider);
+                const { status, statusText, data } = fileUploadResult;
+                await Apify.pushData({
+                    operation: 'upload',
+                    status: 'success',
+                    file,
+                    storeIdOrName: filesProvider.storeIdOrName,
+                    fileUploadResult: { status, statusText, data },
+                });
+            },
+            handleFailedRequestFunction: async ({ request }) => {
+                const { userData: { file } } = request;
+                await Apify.pushData({
+                    operation: 'upload',
+                    status: 'failed',
+                    file,
+                    storeIdOrName: filesProvider.storeIdOrName,
+                    errors: request.errorMessages,
+                });
             },
 
         });
 
         await crawler.run();
-
-        await Apify.setValue('UPLOAD', uploadedFiles);
     }
 }
 
@@ -131,17 +159,29 @@ class DeleteFolderOperation {
         if (!folder || !(folder instanceof Folder)) throw new Error('DeleteFolderOperation: Parameter "folder" must be of type Folder');
 
         this.folder = folder;
-
-        // TODO: Validate parameters
     }
 
     async execute(driveService) {
-        console.log(`Deleting folder ${this.folder}...`);
-        const { folderId } = await driveService.getFolderInfo(this.folder);
+        const { folder } = this;
+        console.log(`Deleting folder ${folder}...`);
+        const { folderId } = await driveService.getFolderInfo(folder);
         if (!folderId) {
-            console.log('Couldn\'t delete folder because it doesn\'t exist');
+            console.log('Could not delete the folder because it does not exist');
+            await Apify.pushData({
+                operation: 'folders-delete',
+                status: 'success',
+                folder: folder.params,
+                note: 'Folder does not exist',
+            });
         } else {
-            await driveService.deleteFolder(folderId);
+            const folderDeleteResult = await driveService.deleteFolder(folderId);
+            const { status, statusText, data } = folderDeleteResult;
+            await Apify.pushData({
+                operation: 'folders-delete',
+                status: 'success',
+                folder: folder.params,
+                folderDeleteResult: { status, statusText, data },
+            });
         }
     }
 }

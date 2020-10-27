@@ -7,6 +7,11 @@ const { Folder } = require('./operations/helper');
 const DRIVE_ERROR_MESSAGES = {
     insufficientPermissions: 'The user does not have sufficient permissions for this file',
 };
+
+/**
+ *
+ * @property {Config} config
+ */
 class Service {
     /**
      * @param {Config} config
@@ -370,6 +375,7 @@ class Service {
             if (result.code === 404 && result.message.includes('File not found')) {
                 console.log(`Couldn't delete folder with id "${folderId}" because it doesn't exist`);
             }
+            return result;
         } catch (e) {
             if (e.message.includes(DRIVE_ERROR_MESSAGES.insufficientPermissions)) {
                 throw new Error(`${DRIVE_ERROR_MESSAGES.insufficientPermissions} (id="${folderId}")`);
