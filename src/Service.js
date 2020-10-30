@@ -23,12 +23,12 @@ class Service {
     async init() {
         console.log('Initializing drive service...');
 
-        const { tokensStore, googleApisCredentials } = this.config;
+        const { googleOAuthTokensStore, googleOAuthCredentials } = this.config;
 
         this._auth = await apifyGoogleAuth({
             scope: 'drive',
-            tokensStore,
-            credentials: googleApisCredentials,
+            tokensStore: googleOAuthTokensStore,
+            credentials: googleOAuthCredentials,
         });
         /**
          * drive api endpoint.

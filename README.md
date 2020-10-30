@@ -10,6 +10,8 @@ Transfer files between [Apify's key-value stores](https://docs.apify.com/storage
    
    [- Is setup mode (`isSetupMode`)](#Is-setup-mode)
    
+   [- Google OAuth credentials (`googleOAuthCredentials`)](#Google-OAuth-credentials)
+   
    
 
 
@@ -27,7 +29,9 @@ The input is a JSON object with the following fields.
 | operations[*] | Object |  Operation settings, mainly it contains the **type** and other specific settings  | - | - | - |
 | fileUploadTimeoutSecs | number |  Maximum available time (in seconds) used to upload a single file | 120 | - | false |
 | fileUploadingMaxConcurrency | number |  Maximum concurrency used for uploading files in parallel | - | - | false |
-| isSetupMode | boolean |  Whether yes or no to activate the setup mode  | - | - | false |
+| isSetupMode | boolean |  Whether yes or no to activate the setup mode  | false | - | false |
+| googleOAuthTokensStore | string |  Key-value store where your Google OAuth tokens will be stored so you don't have to authorize every time again  | "google-oauth-tokens" | - | false |
+| googleOAuthCredentials | object | Google OAuth credentials  | - | - | false |
 
 ### Constants
  
@@ -146,4 +150,6 @@ Before you start using the actor for running operations, you will need to run it
 ```
 **Note**: If the setup mode is activated, operations will not get executed.
 
+### Google OAuth credentials
 
+If you want to use this actor locally or with your own version, you have to provide your own credentials. To setup yours, check this [guide](https://support.google.com/googleapi/answer/6158849?hl=en&ref_topic=7013279#). Required credentials data is: "client_id", "client_secret", and "redirect_uri".

@@ -1,0 +1,52 @@
+{
+  "title": "Google Drive input",
+  "type": "object",
+  "schemaVersion": 1,
+  "required": [],
+  "properties": {
+    "constants": {
+      "title": "Constants",
+      "type": "array",
+      "description": "Constants to use in the operations (JSON array)",
+      "editor": "json"
+    },
+    "operations": {
+      "title": "Operations",
+      "type": "array",
+      "description": "The operations to execute",
+      "editor": "json"
+    },
+    "fileUploadTimeoutSecs": {
+      "title": "File upload timeout seconds",
+      "type": "integer",
+      "description": "Required time to upload a single file. Default is 120.",
+      "unit": "seconds",
+      "minimum": 5,
+      "default": 120
+    },
+    "fileUploadingMaxConcurrency": {
+      "title": "File uploading max concurrency",
+      "type": "integer",
+      "description": "Maximum concurrency used for uploading files in parallel."
+    },
+    "isSetupMode": {
+      "title": "Is setup mode",
+      "type": "boolean",
+      "description": "Whether yes or no to activate the setup mode.",
+      "default": false
+    },
+    "googleOAuthTokensStore": {
+      "title": "Google OAuth tokens store",
+      "type": "string",
+      "description": "Key-value store where your Google OAuth tokens will be stored so you don't have to authorize every time again. By default it is google-oauth-tokens",
+      "editor": "textfield",
+      "default": "google-oauth-tokens"
+    },
+    "googleOAuthCredentials": {
+      "title": "Google OAuth credentials",
+      "type": "object",
+      "description": "If you want to use this actor locally or with your own version, you have to provide your own credentials. Check actor readme for more information.",
+      "editor": "json"
+    }
+  }
+}
